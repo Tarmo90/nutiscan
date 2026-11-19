@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Nutiscan — veebiliides</title>
+<link rel="icon" href="/favicon.ico" type="image/x-icon"/>
+<link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="logo">Nuti<span>Scan</span></div>
+    <div class="tagline">web vulnerability workbench</div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-item active" data-view="scan"><span class="ico">◎</span> Uus skann</button>
+    <button class="nav-item" data-view="findings"><span class="ico">◆</span> Leiud <span class="badge" id="navFindings">0</span></button>
+    <button class="nav-item" data-view="fixes"><span class="ico">✦</span> Parandused</button>
+    <button class="nav-item" data-view="history"><span class="ico">◷</span> Ajalugu</button>
+  </nav>
+
+  <div class="side-foot">
+    <div class="engine"><span class="dot"></span> mootor <b>v2.0</b></div>
+    <div class="mini">15 kontrolli · 5 eksporti</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <section class="view" id="view-scan">
+    <header class="page-head">
+      <div>
+        <h1>Skänni sihtmärki</h1>
+        <p>Sisesta URL. Nutiscan kaardistab saidi, kontrollib 15 nõrkust ja koostab parandusplaani.</p>
+      </div>
+      <div class="live" id="livePill"><span></span> valmis</div>
+    </header>
+
+    <div class="card scan-card">
+      <form id="scanForm" autocomplete="off">
+        <div class="target-row">
+          <div class="target-input">
+            <span class="prefix">https://</span>
+            <input id="url" type="text" placeholder="example.com" spellcheck="false" required/>
+          </div>
+          <button type="submit" id="startBtn" class="btn primary lg">Käivita skann <span>→</span></button>
+          <button type="button" id="stopBtn" class="btn ghost lg" disabled>Peata</button>
+        </div>
+
+        <div class="quick">
+          <label>Lehti <input id="maxPages" type="number" min="5" max="300" value="60"/></label>
+          <label>Sügavus <input id="maxDepth" type="number" min="0" max="5" value="2"/></label>
+          <label>Kiirus/s <input id="rateLimit" type="number" min="0.5" max="50" step="0.5" value="8"/></label>
+          <label class="toggle"><input id="active" type="checkbox" checked/> Aktiivsed kontrollid</label>
+          <label class="toggle"><input id="allowPrivate" type="checkbox"/> Lokaalne lubatud</label>
+          <label class="toggle"><input id="idor" type="checkbox"/> IDOR-kontroll</label>
+        </div>
+
+        <details class="advanced">
+          <summary>Täpsemad seaded · autentimine, päised ja kontrollid</summary>
+          <div class="adv-grid">
+            <label class="adv-field">Päised (JSON)
+              <textarea id="headers" rows="3" placeholder='{"Authorization":"Bearer ..."}' spellcheck="false"></textarea>
+            </label>
+            <label class="adv-field">Autentimine (JSON)
+              <textarea id="auth" rows="4" spellcheck="false"
+                placeholder='{"bearer":"...","cookies":{...},"credentials":[{"loginUrl":"...","fields":{...},"successMarker":"..."}]}'></textarea>
+            </label>
+            <div class="checks" id="checkBoxes"></div>
+          </div>
+        </details>
+      </form>
+    </div>
+
+    <div class="card progress-card" id="progressCard" hidden>
+      <div class="progress-top">
+        <div><b id="stage">ootab</b><span id="progressPct">0%</span></div>
+        <span class="timer" id="timer">0.0s</span>
+      </div>
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="progress-meta" id="progressMeta"></div>
+    </div>
+
+    <div class="stat-grid" id="statGrid" hidden>
+      <div class="stat critical"><div class="stat-n" id="cCritical">0</div><div class="stat-l">kriitiline</div></div>
+      <div class="stat high"><div class="stat-n" id="cHigh">0</div><div class="stat-l">kõrge</div></div>
+      <div class="stat medium"><div class="stat-n" id="cMedium">0</div><div class="stat-l">keskmine</div></div>
+      <div class="stat low"><div class="stat-n" id="cLow">0</div><div class="stat-l">madal</div></div>
+      <div class="stat info"><div class="stat-n" id="cInfo">0</div><div class="stat-l">info</div></div>
+      <div class="stat risk"><div class="stat-n" id="cRisk">0</div><div class="stat-l">risk / 100</div></div>
+    </div>
+
+    <div class="card triage-card" id="triageCard" hidden>
+      <div class="card-head"><h2>AI-triaaž · ründaja tegevusjärjekord</h2><span class="chip" id="riskChip"></span></div>
+      <div id="triage" class="triage"></div>
+    </div>
+
+    <div class="card" id="miniFindings" hidden>
+      <div class="card-head"><h2>Viimased leiud</h2><button class="link" data-goto="findings">Vaata kõiki →</button></div>
+      <div id="miniList" class="mini-list"></div>
+    </div>
+  </section>
+
+  <section class="view" id="view-findings" hidden>
+    <header class="page-head">
+      <div><h1>Leiud</h1><p>Iga leid on klõpsatav — ava paremal detailid ja parandusjuhend.</p></div>
+      <div class="export-group">
+        <button data-export="md" class="btn ghost sm">MD</button>
+        <button data-export="html" class="btn ghost sm">HTML</button>
+        <button data-export="csv" class="btn ghost sm">CSV</button>
+        <button data-export="sarif" class="btn ghost sm">SARIF</button>
+        <button data-export="json" class="btn ghost sm">JSON</button>
+      </div>
+    </header>
+    <div class="find-layout">
+      <div class="card findings-pane">
+        <div class="filters" id="filters">
+          <button data-sev="all" class="chip active">kõik</button>
+          <button data-sev="critical" class="chip sev-critical">kriitiline</button>
+          <button data-sev="high" class="chip sev-high">kõrge</button>
+          <button data-sev="medium" class="chip sev-medium">keskmine</button>
+          <button data-sev="low" class="chip sev-low">madal</button>
+          <button data-sev="info" class="chip sev-info">info</button>
+          <input id="search" type="text" placeholder="otsi leide…" class="search"/>
+        </div>
+        <div id="findingsList" class="findings-list"></div>
+      </div>
+      <div class="card detail-pane" id="detailPane">
+        <div class="empty-detail">Vali vasakult leid, et näha detaile ja parandusjuhendit.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-fixes" hidden>
+    <header class="page-head">
+      <div><h1>Paranduste raamatukogu</h1><p>Samm-sammult juhendid ja koodinäited iga haavatavuse klassi jaoks.</p></div>
+    </header>
+    <div class="fix-grid" id="fixGrid"></div>
+  </section>
+
+  <section class="view" id="view-history" hidden>
+    <header class="page-head">
+      <div><h1>Ajalugu</h1><p>Varasemad skannid. Klõpsa, et avada leiud ja aruanne.</p></div>
+      <button id="refreshHistory" class="btn ghost sm">Värskenda</button>
+    </header>
+    <div class="card"><div id="historyList" class="history-list"></div></div>
+  </section>
+
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/app.js"></script>
+</body>
+</html>
