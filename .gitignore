@@ -1,0 +1,11 @@
+﻿__pycache__/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+webui-history/
+fixed-demo-report/
+reports/
+*.raw.json
