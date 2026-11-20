@@ -8,7 +8,7 @@ const CHECKS = [
   ['headers','Turvapeadised'],['cookies','Küpsised'],['cors','CORS'],['cache','Vahemälu'],
   ['banner','Versioonileke'],['tls','TLS'],['methods','HTTP-meetodid'],['exposed','Avalikud failid'],
   ['xss','XSS'],['sqli','SQLi'],['traversal','Traversal'],['redirect','Ümbersuunamine'],
-  ['command','Käsu süüst'],['ssti','SSTI'],['crlf','CRLF']
+  ['command','Käsu süüst'],['ssti','SSTI'],['crlf','CRLF'],['domxss','DOM-XSS']
 ];
 
 function toast(msg) {

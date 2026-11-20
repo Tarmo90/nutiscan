@@ -4,7 +4,7 @@ set "OLI=C:\Users\tarmo\OpenBot\Agents\agent-fe7aaccd-958f-4c21-ab83-1c4aeccbf83
 set "PY=C:\Python315\python.exe"
 cd /d "%OLI%"
 echo.
-echo   Nutiscan 2.0 - veebiliides
+echo   Nutiscan 2.1 - veebiliides
 echo   =========================
 echo.
 

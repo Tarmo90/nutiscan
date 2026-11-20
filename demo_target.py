@@ -106,6 +106,7 @@ class DemoApp(BaseHTTPRequestHandler):
             "<a href='/go?redirect=%2Fhome'>go2</a>"
             "<a href='/headers'>headers</a><a href='/uploads/'>uploads</a>"
             "<script>var api='/echo?q=1';</script>"
+            "<script>var q=location.search;document.getElementById('out').innerHTML=q;</script>"
             "<form action='/echo' method='GET'><input name='q' value='1'></form>"
             "</body></html>",
             headers=extra,

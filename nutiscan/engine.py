@@ -12,7 +12,7 @@ import uuid
 from dataclasses import dataclass, field
 
 from . import auth as auth_module
-from . import idor, intel, triage
+from . import domxss, idor, intel, triage
 from .checks import Context, load_checks
 from .config import Config
 from .crawling import Crawler, Endpoint
@@ -71,7 +71,7 @@ class ScanJob:
         return {
             "id": self.id,
             "tool": "Nutiscan",
-            "version": "2.0.0",
+            "version": "2.1.0",
             "url": self.url,
             "status": self.status,
             "stage": self.stage,
@@ -199,6 +199,14 @@ class Engine:
         ctx.pages = pages
         ctx.endpoints = endpoints
         job.log(f"Kaardistatud {len(pages)} lehte, {len(endpoints)} sisendit")
+
+        if config.enabled("domxss"):
+            job.stage = "DOM-XSS"
+            dom_findings = domxss.check_dom_xss(pages, origin(target))
+            for finding in dom_findings:
+                job.emit(finding)
+            if dom_findings:
+                job.log(f"DOM-XSS: {len(dom_findings)} kahtlast voolu")
 
         job.progress = 50
         job.stage = "avalikud failid"

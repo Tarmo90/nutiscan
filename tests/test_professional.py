@@ -52,6 +52,19 @@ class ProfessionalTest(unittest.TestCase):
         self.assertGreaterEqual(finding.score, 9.0)
         self.assertLessEqual(cvss_estimate(finding), 10.0)
 
+    def test_dom_xss_detection(self):
+        from nutiscan.crawling import Page
+        from nutiscan.domxss import check_dom_xss
+        page = Page(
+            url="https://example.com/", status=200, title="", generator="",
+            links=[], forms=[], script_paths=[], comments=[],
+            scripts=["var q = location.search; el.innerHTML = q;"],
+        )
+        findings = check_dom_xss([page], "https://example.com")
+        self.assertTrue(findings)
+        self.assertEqual(findings[0].check, "domxss")
+        self.assertIn("innerHTML", findings[0].title)
+
     def test_no_secrets_in_snapshot(self):
         from nutiscan.engine import new_job
         from nutiscan.config import Config

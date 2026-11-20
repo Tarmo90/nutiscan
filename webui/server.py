@@ -283,7 +283,7 @@ def _checks(value) -> list[str]:
         return []
     allowed = {
         "headers", "cookies", "cors", "cache", "banner", "tls", "methods", "exposed",
-        "xss", "sqli", "traversal", "redirect", "command", "ssti", "crlf",
+        "xss", "sqli", "traversal", "redirect", "command", "ssti", "crlf", "domxss",
     }
     return [str(item) for item in value[:20] if str(item) in allowed]
 

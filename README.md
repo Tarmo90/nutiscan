@@ -1,4 +1,4 @@
-# Nutiscan 2.0
+# Nutiscan 2.1
 
 Standalone veebihaavatavuse skanner oma mootoriga. Ainult Pythoni standardteek, Python 3.10+.
 
@@ -12,7 +12,7 @@ python webui/run.py --port 8822
 
 Avaneb `http://127.0.0.1:8822/`. Veebiliides:
 
-- **Uus skann** — URL, piirangud, päised, 15 kontrolli valikut, progress ja riskiskoor.
+- **Uus skann** — URL, piirangud, päised, 16 kontrolli valikut, progress ja riskiskoor.
 - **Leiud** — otsing, filtrid raskusastme järgi, klõpsatavad detailid.
 - **Parandused** — iga leiuga on samm-sammult juhend ja koodinäited (nginx / Apache / Express / PHP / Python / Node / Java / Go).
 - **Ajalugu** — varasemad skannid, klõps avab leiud.
@@ -35,8 +35,12 @@ Valmis exe: `dist\Nutiscan.exe` (ja koopia töölaual). `Nutiscan.exe scan --tar
 
 - `nutiscan/http.py` — kiirusepiirang, cookie jar, päised, suunad, 2 MB keha piir.
 - `nutiscan/crawling.py` — BFS, vormid, parameetrid, JS-i teed.
-- `nutiscan/checks/` — 15 kontrolli: turvapeadised, küpsised, CORS, cache, banner, TLS,
+- `nutiscan/checks/` — 16 kontrolli: turvapeadised, küpsised, CORS, cache, banner, TLS,
   meetodid, 55 avaliku faili probe'i, XSS, SQLi, traversal, redirect, käsu süüst, SSTI, CRLF.
+- `nutiscan/domxss.py` — staatiline DOM-XSS: kasutaja allikad → ohtlikud JS-neelud.
+- `nutiscan/auth.py` — autenditud skannimine (bearer, basic, küpsised, login-voo).
+- `nutiscan/idor.py` — IDOR-i ja naabrus-ID diferentsiaalkontroll.
+- `nutiscan/intel.py` — offline CVE-korrelatsioon ja CVSS-hinnang.
 - `nutiscan/triage.py` — riskiskoor, ründeahelad, prioriteedid, käsitsi sammud.
 - `nutiscan/export.py` — JSON, Markdown, HTML, CSV, SARIF.
 

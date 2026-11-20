@@ -37,6 +37,7 @@ class Page:
     forms: list[Form]
     script_paths: list[str]
     comments: list[str]
+    scripts: list[str]
 
 
 class _Parser(HTMLParser):
@@ -168,6 +169,7 @@ class Crawler:
                 forms=[f for f in parser.forms],
                 script_paths=script_paths,
                 comments=parser.comments,
+                scripts=parser.scripts,
             )
             pages.append(page)
             if on_page is not None:
