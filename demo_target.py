@@ -31,6 +31,14 @@ class DemoApp(BaseHTTPRequestHandler):
         echoed = self.headers.get("X-Nutiscan", "")
         self.send_body(f"TRACE {self.path}\nX-Nutiscan: {echoed}")
 
+    def do_POST(self):  # noqa: N802
+        length = int(self.headers.get("Content-Length") or 0)
+        self.rfile.read(length)
+        if self.path.split("?", 1)[0] in ("/graphql", "/api/graphql"):
+            self.send_body('{"data":{"__schema":{"queryType":{"name":"Query"}}}}')
+            return
+        self.send_body("<html><body>ok</body></html>")
+
     def do_GET(self):  # noqa: N802
         path, _, query = self.path.partition("?")
 

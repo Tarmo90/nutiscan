@@ -53,6 +53,34 @@ class ProfessionalTest(unittest.TestCase):
         self.assertGreaterEqual(finding.score, 9.0)
         self.assertLessEqual(cvss_estimate(finding), 10.0)
 
+    def test_diff_and_analytics(self):
+        from nutiscan.diff import analytics, compare
+        base = {
+            "id": "a", "url": "https://example.com", "counts": {"medium": 2},
+            "triageSummary": {"riskScore": 40},
+            "findings": [{"id": "1", "title": "old", "severity": "medium", "category": "Turvapeadised"}],
+        }
+        target = {
+            "id": "b", "url": "https://example.com", "counts": {"medium": 1, "low": 1},
+            "triageSummary": {"riskScore": 30},
+            "findings": [
+                {"id": "1", "title": "old", "severity": "low", "category": "Turvapeadised"},
+                {"id": "2", "title": "new", "severity": "medium", "category": "CORS"},
+            ],
+        }
+        result = compare(base, target)
+        self.assertEqual(result["riskDelta"], -10)
+        self.assertEqual(len(result["added"]), 1)
+        self.assertEqual(len(result["changed"]), 1)
+        data = analytics([base, target])
+        self.assertEqual(data["scans"], 2)
+        self.assertEqual(data["totals"]["medium"], 3)
+
+    def test_graphql_check_registered(self):
+        from nutiscan.checks import load_checks
+        names = {item["name"] for item in load_checks()}
+        self.assertIn("graphql", names)
+
     def test_oob_callback(self):
         from nutiscan.oob import CallbackListener
         with CallbackListener() as listener:

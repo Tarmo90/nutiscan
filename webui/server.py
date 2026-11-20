@@ -17,7 +17,7 @@ try:
 except ImportError:
     from fixes import FIXES, get_fix
 
-from nutiscan import __version__, export
+from nutiscan import __version__, diff, export
 from nutiscan.config import Config
 from nutiscan.engine import Engine, ScanJob, new_job
 
@@ -105,6 +105,20 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/fixes":
             self._json({"fixes": FIXES})
             return
+        if path == "/api/analytics":
+            self._json(diff.analytics(self._all_snapshots()))
+            return
+        if path == "/api/diff":
+            query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+            base_id = str((query.get("base") or [""])[0])
+            target_id = str((query.get("target") or [""])[0])
+            base = self._disk_snapshot(base_id)
+            target = self._disk_snapshot(target_id)
+            if base is None or target is None:
+                self._json({"error": "skann ei ole ajaloos"}, HTTPStatus.NOT_FOUND)
+                return
+            self._json(diff.compare(base, target))
+            return
         if path.startswith("/api/scan/"):
             parts = path.split("/")
             if len(parts) >= 5 and parts[4] == "export":
@@ -172,6 +186,15 @@ class Handler(BaseHTTPRequestHandler):
         if job:
             return job.snapshot()
         return self._disk_snapshot(job_id)
+
+    def _all_snapshots(self) -> list[dict]:
+        result: list[dict] = []
+        for path in sorted(HISTORY.glob("*.json"), key=lambda p: p.stat().st_mtime)[:60]:
+            try:
+                result.append(json.loads(path.read_text(encoding="utf-8")))
+            except (OSError, ValueError):
+                continue
+        return result
 
     def _disk_snapshot(self, job_id: str) -> dict | None:
         path = HISTORY / f"{job_id}.json"
@@ -285,7 +308,7 @@ def _checks(value) -> list[str]:
         return []
     allowed = {
         "headers", "cookies", "cors", "cache", "banner", "tls", "methods", "exposed",
-        "xss", "sqli", "traversal", "redirect", "command", "ssti", "crlf", "domxss",
+        "xss", "sqli", "traversal", "redirect", "command", "ssti", "crlf", "domxss", "graphql",
     }
     return [str(item) for item in value[:20] if str(item) in allowed]
 

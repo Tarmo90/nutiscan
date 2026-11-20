@@ -71,7 +71,7 @@ class ScanJob:
         return {
             "id": self.id,
             "tool": "Nutiscan",
-            "version": "2.2.0",
+            "version": "2.3.0",
             "url": self.url,
             "status": self.status,
             "stage": self.stage,

@@ -25,9 +25,9 @@ class Context:
 
 
 def load_checks() -> list[dict]:
-    from . import active, exposed, passive
+    from . import active, exposed, graphql, passive
 
-    return [*passive.CHECKS, *exposed.CHECKS, *active.CHECKS]
+    return [*passive.CHECKS, *exposed.CHECKS, *active.CHECKS, *graphql.CHECKS]
 
 
 __all__ = ["Context", "load_checks", "Endpoint", "Page"]

@@ -21,11 +21,12 @@
     <button class="nav-item" data-view="findings"><span class="ico">◆</span> Leiud <span class="badge" id="navFindings">0</span></button>
     <button class="nav-item" data-view="fixes"><span class="ico">✦</span> Parandused</button>
     <button class="nav-item" data-view="history"><span class="ico">◷</span> Ajalugu</button>
+    <button class="nav-item" data-view="analytics"><span class="ico">▤</span> Analüütika</button>
   </nav>
 
   <div class="side-foot">
-    <div class="engine"><span class="dot"></span> mootor <b>v2.2</b></div>
-    <div class="mini">17 kontrolli · 5 eksporti</div>
+    <div class="engine"><span class="dot"></span> mootor <b>v2.3</b></div>
+    <div class="mini">18 kontrolli · 5 eksporti</div>
   </div>
 </aside>
 
@@ -35,7 +36,7 @@
     <header class="page-head">
       <div>
         <h1>Skänni sihtmärki</h1>
-        <p>Sisesta URL. Nutiscan kaardistab saidi, kontrollib 17 nõrkust ja koostab parandusplaani.</p>
+        <p>Sisesta URL. Nutiscan kaardistab saidi, kontrollib 18 nõrkust ja koostab parandusplaani.</p>
       </div>
       <div class="live" id="livePill"><span></span> valmis</div>
     </header>
@@ -149,6 +150,48 @@
       <button id="refreshHistory" class="btn ghost sm">Värskenda</button>
     </header>
     <div class="card"><div id="historyList" class="history-list"></div></div>
+  </section>
+
+  <section class="view" id="view-analytics" hidden>
+    <header class="page-head">
+      <div><h1>Analüütika</h1><p>Riski trend, raskusaste ja kategooriad üle kõigi skannide.</p></div>
+      <button id="refreshAnalytics" class="btn ghost sm">Värskenda</button>
+    </header>
+
+    <div class="stat-grid" id="analyticsStats">
+      <div class="stat critical"><div class="stat-n" id="aCritical">0</div><div class="stat-l">kriitiline</div></div>
+      <div class="stat high"><div class="stat-n" id="aHigh">0</div><div class="stat-l">kõrge</div></div>
+      <div class="stat medium"><div class="stat-n" id="aMedium">0</div><div class="stat-l">keskmine</div></div>
+      <div class="stat low"><div class="stat-n" id="aLow">0</div><div class="stat-l">madal</div></div>
+      <div class="stat info"><div class="stat-n" id="aInfo">0</div><div class="stat-l">info</div></div>
+      <div class="stat risk"><div class="stat-n" id="aScans">0</div><div class="stat-l">skanni</div></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="card chart-card">
+        <h2>Riski trend</h2>
+        <div id="riskChart" class="chart"></div>
+      </div>
+      <div class="card chart-card">
+        <h2>Raskusastmed</h2>
+        <div id="severityChart" class="chart"></div>
+      </div>
+      <div class="card chart-card wide">
+        <h2>Leidude kategooriad</h2>
+        <div id="categoryChart" class="chart"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h2>Skannide võrdlus</h2><span class="chip" id="diffDelta"></span></div>
+      <div class="diff-controls">
+        <select id="diffBase" class="select"></select>
+        <span>vs</span>
+        <select id="diffTarget" class="select"></select>
+        <button id="diffRun" class="btn primary sm">Võrdle</button>
+      </div>
+      <div id="diffResult" class="diff-result">Vali kaks skanni ja vajuta Võrdle.</div>
+    </div>
   </section>
 
 </main>

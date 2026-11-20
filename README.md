@@ -1,4 +1,4 @@
-# Nutiscan 2.2
+# Nutiscan 2.3
 
 Standalone veebihaavatavuse skanner oma mootoriga. Ainult Pythoni standardteek, Python 3.10+.
 
@@ -12,7 +12,7 @@ python webui/run.py --port 8822
 
 Avaneb `http://127.0.0.1:8822/`. Veebiliides:
 
-- **Uus skann** — URL, piirangud, päised, 17 kontrolli valikut, progress ja riskiskoor.
+- **Uus skann** — URL, piirangud, päised, 18 kontrolli valikut, progress ja riskiskoor.
 - **Leiud** — otsing, filtrid raskusastme järgi, klõpsatavad detailid.
 - **Parandused** — iga leiuga on samm-sammult juhend ja koodinäited (nginx / Apache / Express / PHP / Python / Node / Java / Go).
 - **Ajalugu** — varasemad skannid, klõps avab leiud.
@@ -42,6 +42,12 @@ Valmis exe: `dist\Nutiscan.exe` (ja koopia töölaual). `Nutiscan.exe scan --tar
 - `nutiscan/idor.py` — IDOR-i ja naabrus-ID diferentsiaalkontroll.
 - `nutiscan/intel.py` — offline CVE-korrelatsioon ja CVSS-hinnang.
 - `nutiscan/oob.py` — pime süüst: kohalik HTTP-callback kuulaja, OOB-interaktsioonide tuvastus.
+- `nutiscan/checks/graphql.py` — introspeksioon, aliased, batching.
+- `nutiscan/diff.py` — skannide võrdlus ja graafikuandmed (riskitrend, raskus, kategooriad).
+
+Veebiliidese "Analüütika" vaade näitab SVG-graafikuid ja kahe skanni erinevust ilma väliste pakettideta.
+Ajastatud kontroll: OpenBot routine "Nutiscan daily security check" — iga päev 09:00 (Europe/Tallinn),
+skannib nutifix.ee ja teatab ainult riskimuutusest või uuest kõrgest leiust.
 - `nutiscan/triage.py` — riskiskoor, ründeahelad, prioriteedid, käsitsi sammud.
 - `nutiscan/export.py` — JSON, Markdown, HTML, CSV, SARIF.
 
