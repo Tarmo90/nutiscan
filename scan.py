@@ -54,6 +54,9 @@ def _common(cmd: argparse.ArgumentParser) -> None:
     cmd.add_argument("--checks", help="comma separated check names")
     cmd.add_argument("--auth-file", help="JSON file: cookies, bearer, credentials, headers")
     cmd.add_argument("--idor", action="store_true", help="authenticated IDOR differential check")
+    cmd.add_argument("--oob", action="store_true", help="out-of-band blind injection check")
+    cmd.add_argument("--oob-wait", type=float, default=3.0, help="OOB callback wait seconds")
+    cmd.add_argument("--oob-host", default="127.0.0.1", help="OOB listener bind host")
 
 
 def config_from_args(args: argparse.Namespace) -> Config:
@@ -88,6 +91,10 @@ def config_from_args(args: argparse.Namespace) -> Config:
         config.auth = json.loads(Path(args.auth_file).read_text(encoding="utf-8"))
     if getattr(args, "idor", False):
         config.enable_idor = True
+    if getattr(args, "oob", False):
+        config.enable_oob = True
+        config.oob_wait = max(0.5, min(15.0, args.oob_wait))
+        config.oob_host = args.oob_host
     return config
 
 

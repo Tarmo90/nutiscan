@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 import unittest
 from pathlib import Path
 
@@ -51,6 +52,15 @@ class ProfessionalTest(unittest.TestCase):
         )
         self.assertGreaterEqual(finding.score, 9.0)
         self.assertLessEqual(cvss_estimate(finding), 10.0)
+
+    def test_oob_callback(self):
+        from nutiscan.oob import CallbackListener
+        with CallbackListener() as listener:
+            self.assertTrue(listener.base_url.startswith("http://127.0.0.1:"))
+            import urllib.request
+            urllib.request.urlopen(listener.base_url + "?id=abc123", timeout=3).read()
+            time.sleep(0.2)
+            self.assertTrue(listener.hits_for("abc123"))
 
     def test_dom_xss_detection(self):
         from nutiscan.crawling import Page

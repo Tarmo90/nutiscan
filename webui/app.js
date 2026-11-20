@@ -60,6 +60,7 @@ el('scanForm').addEventListener('submit', async (event) => {
     rateLimit: Number(el('rateLimit').value) || 8,
     allowPrivate: el('allowPrivate').checked,
     idor: el('idor').checked,
+    oob: el('oob').checked,
     checks: Array.from(document.querySelectorAll('[data-check]')).filter(x => x.checked).map(x => x.dataset.check),
   };
   const authText = el('auth').value.trim();

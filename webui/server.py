@@ -47,6 +47,8 @@ class App:
             checks=_checks(payload.get("checks")),
             auth=_auth(payload.get("auth")),
             enable_idor=bool(payload.get("idor")),
+            enable_oob=bool(payload.get("oob")),
+            oob_wait=_float(payload.get("oobWait"), 3.0, 0.5, 15.0),
         )
         job = new_job(url, config)
         with self.lock:

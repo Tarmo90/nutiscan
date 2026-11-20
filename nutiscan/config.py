@@ -26,6 +26,9 @@ class Config:
     checks: list[str] = field(default_factory=list)
     auth: dict | None = None
     enable_idor: bool = False
+    enable_oob: bool = False
+    oob_wait: float = 3.0
+    oob_host: str = "127.0.0.1"
     compare_baseline: str = ""
 
     def enabled(self, name: str) -> bool:

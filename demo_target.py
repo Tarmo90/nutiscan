@@ -67,6 +67,13 @@ class DemoApp(BaseHTTPRequestHandler):
             return
         if path == "/echo":
             value = unquote_plus(parse_qs(query).get("q", [""])[0])
+            # Emulate blind SSRF: if the input is a URL, fetch it server-side.
+            if value.startswith("http://") and "Nutiscan" in value:
+                try:
+                    import urllib.request
+                    urllib.request.urlopen(value, timeout=2).read()
+                except Exception:
+                    pass
             # Emulate a real command result: only the marker is returned,
             # not the shell syntax that produced it.
             import re

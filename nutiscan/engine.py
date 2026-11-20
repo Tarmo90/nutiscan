@@ -12,7 +12,7 @@ import uuid
 from dataclasses import dataclass, field
 
 from . import auth as auth_module
-from . import domxss, idor, intel, triage
+from . import domxss, idor, intel, oob, triage
 from .checks import Context, load_checks
 from .config import Config
 from .crawling import Crawler, Endpoint
@@ -71,7 +71,7 @@ class ScanJob:
         return {
             "id": self.id,
             "tool": "Nutiscan",
-            "version": "2.1.0",
+            "version": "2.2.0",
             "url": self.url,
             "status": self.status,
             "stage": self.stage,
@@ -225,6 +225,20 @@ class Engine:
             job.progress = 60 + int(30 * index / max(1, len(active_checks)))
             job.log(f"Kontroll {check['name']}: {len(active_endpoints)} sihtmärki")
             _safe_run(job, check, ctx, active_endpoints)
+
+        if config.enable_oob:
+            job.progress = 90
+            job.stage = "OOB-kontroll"
+            job.log("Pime süüst: käivitan kohaliku callback-kuulaja")
+            try:
+                with oob.CallbackListener(host=config.oob_host) as listener:
+                    for finding in oob.check_oob(
+                        client, active_endpoints, listener,
+                        wait_seconds=config.oob_wait,
+                    ):
+                        job.emit(finding)
+            except OSError as exc:
+                job.log(f"OOB-kuulaja ei käivitunud: {exc}")
 
         if config.enable_idor and config.auth:
             job.progress = 92
