@@ -21,7 +21,7 @@ $env:STRIPE_SECRET_KEY = "sk_test_..."
 ## 3. Loo tooted, hinnad ja maksulingid
 
 ```powershell
-cd C:\Users\tarmo\OpenBot\Agents\agent-40448fe9-55c8-47cc-8a35-b500632b454f\nutiscan-site
+cd C:\Users\tarmo\OpenBot\Agents\agent-fe7aaccd-958f-4c21-ab83-1c4aeccbf83e\Nutiscan\docs
 python stripe_setup.py
 ```
 
