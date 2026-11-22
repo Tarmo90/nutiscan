@@ -16,7 +16,7 @@ from unittest import mock
 from nutiscan import license as lic
 from webui import server
 from webui.server import App, Handler
-from test_nutiscan import TEST_LICENSE
+from test_nutiscan import STAAR_LICENSE, TEST_LICENSE
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -90,6 +90,40 @@ class WebUITest(unittest.TestCase):
             self.fail("Vigane võti aktsepteeriti")
         _, body, _ = self.call("/api/license")
         self.assertEqual(json.loads(body)["tier"], "too")
+
+    def test_api_v1(self):
+        original = self.app.license
+        try:
+            def api_get(path, key="testkey123"):
+                headers = {"X-API-Key": key} if key is not None else {}
+                request = urllib.request.Request(self.base + path, headers=headers)
+                try:
+                    with urllib.request.urlopen(request, timeout=10) as response:
+                        return response.status, json.loads(response.read())
+                except urllib.error.HTTPError as exc:
+                    code, body = exc.code, json.loads(exc.read())
+                    exc.close()
+                    return code, body
+
+            status, data = api_get("/api/v1/license")
+            self.assertEqual(status, 403, data)
+            self.app.license = lic.load(STAAR_LICENSE)
+            with mock.patch.dict("os.environ", {"NUTISCAN_API_KEYS": "testkey123"}):
+                status, data = api_get("/api/v1/license")
+                self.assertEqual(status, 200, data)
+                self.assertEqual(data["tier"], "staar")
+                self.assertTrue(data["apiAccess"])
+                status, data = api_get("/api/v1/license", key="wrong")
+                self.assertEqual(status, 401, data)
+                status, data = api_get("/api/v1/license", key=None)
+                self.assertEqual(status, 401, data)
+                status, data = api_get("/api/v1/history")
+                self.assertEqual(status, 200, data)
+                self.assertIsInstance(data["items"], list)
+                status, data = api_get("/api/v1/scan/does-not-exist")
+                self.assertEqual(status, 404, data)
+        finally:
+            self.app.license = original
 
     def test_scan_and_exports(self):
         status, body, _ = self.call("/api/scan", {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import smtplib
 import threading
 import time
 import urllib.parse
@@ -19,6 +20,7 @@ except ImportError:
 
 from nutiscan import __version__, diff, export
 from nutiscan import license as lic
+from nutiscan import mailer
 from nutiscan.config import Config
 from nutiscan.engine import Engine, ScanJob, new_job
 
@@ -30,6 +32,7 @@ class App:
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.jobs: dict[str, ScanJob] = {}
+        self.report_emails: dict[str, str] = {}
         self.engine = Engine()
         self.license_error = ""
         try:
@@ -83,9 +86,17 @@ class App:
             oob_wait=_float(payload.get("oobWait"), 3.0, 0.5, 15.0),
         )
         config.checks = self.license.filter_checks(config.checks)
+        report_email = str(payload.get("reportEmail", "")).strip()
+        if report_email:
+            if not self.license.email_reports:
+                raise lic.LicenseError("E-postraportid on saadaval alates Staar paketist")
+            if "@" not in report_email or len(report_email) > 254:
+                raise ValueError("Vigane e-posti aadress")
         job = new_job(url, config)
         with self.lock:
             self.jobs[job.id] = job
+            if report_email:
+                self.report_emails[job.id] = report_email
         threading.Thread(target=self._run, args=(job,), daemon=True).start()
         return job
 
@@ -96,6 +107,14 @@ class App:
             (HISTORY / f"{job.id}.json").write_bytes(export.to_json(snapshot))
         except OSError:
             pass
+        with self.lock:
+            recipient = self.report_emails.pop(job.id, "")
+        if recipient:
+            try:
+                mailer.send_report(mailer.MailConfig.from_env(), recipient, snapshot, "html")
+                job.log(f"Raport saadetud: {recipient}")
+            except (ValueError, OSError, smtplib.SMTPException) as exc:
+                job.log(f"E-posti saatmine ebaõnnestus: {exc}")
 
     def get(self, job_id: str) -> ScanJob | None:
         with self.lock:
@@ -127,8 +146,70 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         pass
 
+    def _api_guard(self) -> bool:
+        if not self.app.license.api_access:
+            self._json({"error": "API nõuab Staar paketti"}, HTTPStatus.FORBIDDEN)
+            return False
+        key = self.headers.get("X-API-Key", "").strip()
+        if not key or key not in _api_keys():
+            self._json({"error": "Vigane API-võti"}, HTTPStatus.UNAUTHORIZED)
+            return False
+        return True
+
+    def _api_get(self, path: str, query: dict) -> None:
+        if path == "/api/v1/license":
+            self._json(self.app.license_info())
+            return
+        if path == "/api/v1/history":
+            self._json({"items": self.app.history()})
+            return
+        parts = path.split("/")
+        if len(parts) >= 5 and parts[3] == "scan":
+            job_id = parts[4]
+            if len(parts) >= 6 and parts[5] == "export":
+                fmt = str((query.get("format") or ["json"])[0]).lower()
+                if fmt not in export.FORMATS:
+                    self._json({"error": "tundmatu formaat"}, HTTPStatus.BAD_REQUEST)
+                    return
+                snapshot = self._snapshot(job_id)
+                if snapshot is None:
+                    self._json({"error": "tundmatu skann"}, HTTPStatus.NOT_FOUND)
+                    return
+                content_type, extension, render = export.FORMATS[fmt]
+                self._download(f"nutiscan-{job_id}.{extension}", content_type, render(snapshot))
+                return
+            snapshot = self._snapshot(job_id)
+            if snapshot is None:
+                self._json({"error": "tundmatu skann"}, HTTPStatus.NOT_FOUND)
+                return
+            self._json(snapshot)
+            return
+        self._json({"error": "ei leitud"}, HTTPStatus.NOT_FOUND)
+
+    def _api_post(self, path: str, payload: dict) -> None:
+        if path == "/api/v1/scan":
+            if not str(payload.get("url", "")).strip():
+                self._json({"error": "URL on kohustuslik"}, HTTPStatus.BAD_REQUEST)
+                return
+            try:
+                job = self.app.start(payload)
+            except lic.LicenseError as exc:
+                self._json({"error": str(exc)}, HTTPStatus.FORBIDDEN)
+                return
+            except ValueError as exc:
+                self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+                return
+            self._json({"id": job.id, "status": job.status}, HTTPStatus.ACCEPTED)
+            return
+        self._json({"error": "ei leitud"}, HTTPStatus.NOT_FOUND)
+
     def do_GET(self):  # noqa: N802
-        path = urllib.parse.urlsplit(self.path).path
+        split = urllib.parse.urlsplit(self.path)
+        path = split.path
+        if path.startswith("/api/v1/"):
+            if self._api_guard():
+                self._api_get(path, urllib.parse.parse_qs(split.query))
+            return
         if path == "/api/health":
             self._json({"ok": True, "version": __version__, "tool": "Nutiscan",
                         "tier": self.app.license.tier})
@@ -203,6 +284,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802
         path = urllib.parse.urlsplit(self.path).path
+        if path.startswith("/api/v1/"):
+            if self._api_guard():
+                self._api_post(path, self._body())
+            return
         if path == "/api/license":
             payload = self._body()
             key = str(payload.get("key", "")).strip()
@@ -375,6 +460,20 @@ def _checks(value) -> list[str]:
         "xss", "sqli", "traversal", "redirect", "command", "ssti", "crlf", "domxss", "graphql",
     }
     return [str(item) for item in value[:20] if str(item) in allowed]
+
+
+def _api_keys() -> set[str]:
+    """API keys come from the environment or ~/.nutiscan/api-keys, never from code."""
+    keys = {part.strip() for part in os.environ.get("NUTISCAN_API_KEYS", "").split(",") if part.strip()}
+    try:
+        keys |= {
+            line.strip() for line in
+            (Path.home() / ".nutiscan" / "api-keys").read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.startswith("#")
+        }
+    except OSError:
+        pass
+    return keys
 
 
 def serve(host: str = "127.0.0.1", port: int = 8822, open_browser: bool = True) -> None:

@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import smtplib
 import sys
 import time
 import urllib.parse
@@ -14,6 +15,7 @@ from pathlib import Path
 
 from nutiscan import __version__, export
 from nutiscan import license as lic
+from nutiscan import mailer
 from nutiscan.config import Config
 from nutiscan.engine import Engine, new_job
 
@@ -36,6 +38,8 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--formats", default="md,html")
     report.add_argument("--out", default="reports")
     report.add_argument("--license", help="litsentsivõti (või NUTISCAN_LICENSE)")
+    report.add_argument("--email", help="saada raport e-postile (Staar ja kõrgem)")
+    report.add_argument("--email-format", default="html", choices=list(export.FORMATS))
     return parser
 
 
@@ -60,6 +64,8 @@ def _common(cmd: argparse.ArgumentParser) -> None:
     cmd.add_argument("--oob-wait", type=float, default=3.0, help="OOB callback wait seconds")
     cmd.add_argument("--oob-host", default="127.0.0.1", help="OOB listener bind host")
     cmd.add_argument("--license", help="litsentsivõti (või NUTISCAN_LICENSE)")
+    cmd.add_argument("--email", help="saada raport e-postile (Staar ja kõrgem)")
+    cmd.add_argument("--email-format", default="html", choices=list(export.FORMATS))
 
 
 def config_from_args(args: argparse.Namespace) -> Config:
@@ -156,6 +162,17 @@ def _formats(value: str, active: lic.License) -> list[str]:
     return allowed
 
 
+def _email_report(args: argparse.Namespace, active: lic.License, snapshot: dict) -> None:
+    recipient = getattr(args, "email", "")
+    if not recipient:
+        return
+    if not active.email_reports:
+        raise lic.LicenseError("E-postraportid on saadaval alates Staar paketist")
+    fmt = getattr(args, "email_format", "html")
+    mailer.send_report(mailer.MailConfig.from_env(), recipient, snapshot, fmt)
+    print(f"[email] raport saadetud: {recipient}", flush=True)
+
+
 def run_scan(args: argparse.Namespace) -> int:
     config = config_from_args(args)
     active = _license_from_args(args)
@@ -178,6 +195,7 @@ def run_scan(args: argparse.Namespace) -> int:
         raw_path = out_dir / f"{stem}.raw.json"
         raw_path.write_bytes(export.to_json(snapshot))
         paths = render_all(snapshot, formats, stem, out_dir)
+        _email_report(args, active, snapshot)
         entry = {
             "target": target,
             "status": job.status,
@@ -208,6 +226,7 @@ def run_report(args: argparse.Namespace) -> int:
     stem = Path(args.input).stem.replace(".raw", "")
     for path in render_all(snapshot, formats, stem, out_dir):
         print(path)
+    _email_report(args, active, snapshot)
     return 0
 
 
@@ -217,7 +236,7 @@ def main() -> int:
         if args.command == "report":
             return run_report(args)
         return run_scan(args)
-    except (ValueError, OSError, json.JSONDecodeError) as exc:
+    except (ValueError, OSError, json.JSONDecodeError, smtplib.SMTPException) as exc:
         print(f"Viga: {exc}", file=sys.stderr)
         return 2
 

@@ -67,6 +67,14 @@ class License:
         except ValueError:
             return True
 
+    @property
+    def email_reports(self) -> bool:
+        return self.tier in ("staar", "ettevotte")
+
+    @property
+    def api_access(self) -> bool:
+        return self.tier in ("staar", "ettevotte")
+
     def allows_format(self, fmt: str) -> bool:
         return fmt in self.exports
 
@@ -124,6 +132,8 @@ class License:
             "exports": list(self.exports),
             "checks": list(self.checks) if self.checks is not None else None,
             "fixes": self.fixes,
+            "emailReports": self.email_reports,
+            "apiAccess": self.api_access,
             "signed": self.signed,
             "keyId": self.key_id,
             "expired": self.expired,

@@ -29,11 +29,18 @@ Täpsem juhend: [STRIPE.md](STRIPE.md).
 | Fail | Roll |
 |---|---|
 | `index.html` | kogu leht: CSS, JS, sisu |
+| `terms.html` | kasutustingimused |
+| `privacy.html` | privaatsuspoliitika |
+| `legal.css` | ühine stiil juriidilistele lehtedele |
+| `sample-report.html` | päris skanniaruande näidis |
+| `CHANGELOG.md` | muudatuste logi (koopia juurest) |
 | `stripe_setup.py` | loob Stripe'is tooted, hinnad ja maksulingid |
-| `STRIPE.md` | Stripe'i seadistuse juhend |
+| `STRIPE.md` | Stripe'i seadistuse juhend, sh webhook |
 | `dist/` | avaldamiseks mõeldud koopia (ainult `index.html`, git'is ei ole) |
 
 ## Enne avaldamist
 
-- Asenda `hello@nutiscan.ee` oma päris e-postiga (2 kohta: `index.html` ja `STRIPE.md`).
+- Asenda `hello@nutiscan.ee` oma päris e-postiga (`index.html`, `STRIPE.md`, `terms.html`, `privacy.html`).
+- Asenda **FILL** kohad lehtedel `terms.html` ja `privacy.html`: registrikood, VAT-number, äriaadress. Lisa ettevõtte andmed ka `index.html` jalusesse.
+- Lisa Stripe'i live-maxelingud `index.html` plokki `STRIPE_LINKS` (juhend `STRIPE.md`).
 - Kontrolli hinnad ja pakettide sisu.

@@ -107,6 +107,18 @@ class LicenseTest(unittest.TestCase):
         self.assertEqual(capped["licenseTier"], "Proov")
         self.assertIs(lic.load(self.issue()).cap_snapshot(snapshot), snapshot)
 
+    def test_tier_capabilities(self):
+        free = lic.load("")
+        self.assertFalse(free.email_reports)
+        self.assertFalse(free.api_access)
+        too = lic.load(self.issue(tier="too"))
+        self.assertFalse(too.email_reports)
+        self.assertFalse(too.api_access)
+        staar = lic.load(self.issue(tier="staar"))
+        self.assertTrue(staar.email_reports)
+        self.assertTrue(staar.api_access)
+        self.assertTrue(staar.describe()["apiAccess"])
+
     def test_active_from_environment(self):
         key = self.issue()
         with mock.patch.dict("os.environ", {"NUTISCAN_LICENSE": key}):
