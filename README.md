@@ -41,7 +41,7 @@ python license_tool.py verify NS1...
 python scan.py scan --target example.com --license "NS1..."
 ```
 
-Veebiliideses sisesta võti vasakus servas. Võtme väljastamise ja müügiühenduse juhend: [LICENSE_KEYS.md](LICENSE_KEYS.md).
+Veebiliideses sisesta võti vasakus servas. Võtme väljastamise ja müügiühenduse juhend: [LICENSE_KEYS.md](LICENSE_KEYS.md). Stripe'i webhook, mis saadab võtme pärast makset e-postiga: `license_webhook.py` (seadistus [STRIPE.md](STRIPE.md) jaotises 8).
 
 ## Mootor
 

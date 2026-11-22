@@ -160,27 +160,31 @@ def cmd_tiers() -> int:
     return 0
 
 
-def cmd_issue(args) -> int:
-    if args.tier not in TIERS:
-        raise SystemExit(f"Tundmatu tase: {args.tier}. Vali: {', '.join(TIERS)}")
-    tier = TIERS[args.tier]
-    expires = args.expires
+def issue_key(tier: str, name: str, expires: str,
+              sites: int | None = None, findings: int | None = None) -> str:
+    """Build and sign a key. Shared by the CLI and the payment webhook."""
+    if tier not in TIERS:
+        raise ValueError(f"Tundmatu tase: {tier}")
     if expires != "lifetime":
-        try:
-            dt.date.fromisoformat(expires)
-        except ValueError as exc:
-            raise SystemExit(f"Kuupäev peab olema YYYY-MM-DD või 'lifetime': {exc}") from exc
+        dt.date.fromisoformat(expires)
+    limits = TIERS[tier]
     payload = {
-        "v": 1, "t": args.tier, "n": args.name, "e": expires,
-        "s": args.sites if args.sites is not None else tier["sites"],
-        "f": args.findings if args.findings is not None else tier["findings"],
-        "c": None, "x": tier["exports"], "r": tier["fixes"],
+        "v": 1, "t": tier, "n": name, "e": expires,
+        "s": sites if sites is not None else limits["sites"],
+        "f": findings if findings is not None else limits["findings"],
+        "c": None, "x": limits["exports"], "r": limits["fixes"],
         "i": secrets.token_hex(4),
     }
     body = _encode(payload)
     d, n = _private()
-    signature = _sign(body.encode("ascii"), d, n)
-    print(body + "." + _b64(signature))
+    return body + "." + _b64(_sign(body.encode("ascii"), d, n))
+
+
+def cmd_issue(args) -> int:
+    try:
+        print(issue_key(args.tier, args.name, args.expires, args.sites, args.findings))
+    except (ValueError, KeyError) as exc:
+        raise SystemExit(str(exc)) from exc
     return 0
 
 

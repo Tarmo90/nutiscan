@@ -46,7 +46,9 @@ Võtme eemaldamiseks tühjenda väli või kustuta `~/.nutiscan/license.key` — 
 
 ## Müügiühendus
 
-Stripe'i Payment Linkide kinnitus peab saatma kliendile litsentsivõtme. Praegu ütleb kassatekst „juurdepääsu juhised saadame e-postiga", aga saatmist pole automatiseeritud — kuni webhooki või Stripe'i kassasisse laaditud faili lisamiseni tuleb võti saata käsitsi pärast makset.
+`license_webhook.py` väljastab võtme automaatselt pärast makset ja saadab selle kliendile e-postiga. Seadistus on kirjas [STRIPE.md](STRIPE.md) jaotises 8.
+
+Lühidalt: loo Stripe'is webhook endpoint `https://sinu-domeen/stripe`, vali sündmused `checkout.session.completed` ja `invoice.paid`, sea keskkonnamuutujad (`NUTISCAN_WEBHOOK_SECRET`, SMTP andmed, `NUTISCAN_FROM_EMAIL`) ja käivita `python license_webhook.py`. Võti luuakse paketi ja tsükli järgi ning saadetakse kliendi e-postile, mis tuli Stripe'i kassast. Dubleerimist takistab `webhook-state/events.log`.
 
 Enne live'i minekut vaata STRIPE.md juhendit: testlingid tuleb asendada live-linkidega ja lehel tuleb lisada kasutustingimused, privaatsuspoliitika ning ettevõtte andmed.
 
