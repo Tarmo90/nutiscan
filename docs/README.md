@@ -36,6 +36,7 @@ Täpsem juhend: [STRIPE.md](STRIPE.md).
 | `CHANGELOG.md` | muudatuste logi (koopia juurest) |
 | `stripe_setup.py` | loob Stripe'is tooted, hinnad ja maksulingid |
 | `STRIPE.md` | Stripe'i seadistuse juhend, sh webhook |
+| `downloads/Nutiscan-v2.3.1-free.zip` | tasuta build, mida nupp „Laadi alla tasuta" alla laadib |
 | `dist/` | avaldamiseks mõeldud koopia (ainult `index.html`, git'is ei ole) |
 
 ## Enne avaldamist

@@ -78,7 +78,7 @@ Testkaardid: https://docs.stripe.com/testing
 - **Arved**: Stripe saadab automaatse kviitungi; e-arve jaoks on vaja eraldi lahendust (nt Merit Aktiva / e-arveldaja integratsioon).
 - **Nõuded**: kasutustingimused ja privaatsuspoliitika lehel (GDPR mainib andmete töötlemist).
 - **Tühistamine**: Stripe Customer Portal (Settings → Billing → Customer portal) annab kliendile iseteeninduse. Luba see sisse ja lisa link kinnitusmeilile.
-- **Proovipakett** (`0 €`) ja **Ettevõte** (`499 €+`) ei ole Stripe'i lingiga — need jäävad kontaktivormile.
+- **Proovipakett** (`0 €`) on otse allalaaditav ZIP lehel `downloads/Nutiscan-v2.3.1-free.zip` — ilma litsentsivõtmeta töötab see Proovi piirangutega. **Ettevõte** (`499 €+`) jääb kontaktivormile.
 
 ## 8. Automaatne litsentsivõtme saatmine
 
