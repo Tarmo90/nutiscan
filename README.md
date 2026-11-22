@@ -31,6 +31,18 @@ python scan.py report --input reports/target.raw.json --formats md,html
 
 Valmis exe: `dist\Nutiscan.exe` (ja koopia töölaual). `Nutiscan.exe scan --target example.com`.
 
+## Litsentsid
+
+Ilma võtmeta töötab skanner **Proov**-tasemel: 1 sait, 5 raskemat leidu, ainult MD. Võti avab Töö (5 saiti), Staar (25 saiti) või Ettevõte (piiramatu) taseme. Võti kontrollitakse kohapeal, ilma võrguta.
+
+```
+python license_tool.py issue --tier too --name "NutiFix OÜ" --expires 2027-12-31
+python license_tool.py verify NS1...
+python scan.py scan --target example.com --license "NS1..."
+```
+
+Veebiliideses sisesta võti vasakus servas. Võtme väljastamise ja müügiühenduse juhend: [LICENSE_KEYS.md](LICENSE_KEYS.md).
+
 ## Mootor
 
 - `nutiscan/http.py` — kiirusepiirang, cookie jar, päised, suunad, 2 MB keha piir.

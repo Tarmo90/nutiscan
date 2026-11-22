@@ -18,6 +18,7 @@ except ImportError:
     from fixes import FIXES, get_fix
 
 from nutiscan import __version__, diff, export
+from nutiscan import license as lic
 from nutiscan.config import Config
 from nutiscan.engine import Engine, ScanJob, new_job
 
@@ -30,10 +31,41 @@ class App:
         self.lock = threading.Lock()
         self.jobs: dict[str, ScanJob] = {}
         self.engine = Engine()
+        self.license_error = ""
+        try:
+            self.license = lic.active()
+        except lic.LicenseError as exc:
+            self.license_error = str(exc)
+            self.license = lic.free_license()
         HISTORY.mkdir(parents=True, exist_ok=True)
+
+    def set_license(self, key: str) -> None:
+        self.license = lic.load(key)
+        lic.save(key)
+        self.license_error = ""
+
+    def license_info(self) -> dict:
+        info = self.license.describe()
+        info["error"] = self.license_error
+        return info
+
+    def used_sites(self) -> set[str]:
+        origins = {_origin(job.url) for job in self.jobs.values()}
+        for path in HISTORY.glob("*.json"):
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if data.get("url"):
+                    origins.add(_origin(str(data["url"])))
+            except (OSError, ValueError):
+                continue
+        return origins
 
     def start(self, payload: dict) -> ScanJob:
         url = str(payload.get("url", "")).strip()
+        used = self.used_sites()
+        origin = _origin(url)
+        if origin not in used:
+            self.license.require_sites(len(used) + 1)
         config = Config(
             max_pages=_int(payload.get("maxPages"), 60, 5, 300),
             max_depth=_int(payload.get("maxDepth"), 2, 0, 5),
@@ -50,6 +82,7 @@ class App:
             enable_oob=bool(payload.get("oob")),
             oob_wait=_float(payload.get("oobWait"), 3.0, 0.5, 15.0),
         )
+        config.checks = self.license.filter_checks(config.checks)
         job = new_job(url, config)
         with self.lock:
             self.jobs[job.id] = job
@@ -58,7 +91,7 @@ class App:
 
     def _run(self, job: ScanJob) -> None:
         self.engine.run(job)
-        snapshot = job.snapshot()
+        snapshot = self.license.cap_snapshot(job.snapshot())
         try:
             (HISTORY / f"{job.id}.json").write_bytes(export.to_json(snapshot))
         except OSError:
@@ -97,7 +130,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):  # noqa: N802
         path = urllib.parse.urlsplit(self.path).path
         if path == "/api/health":
-            self._json({"ok": True, "version": __version__, "tool": "Nutiscan"})
+            self._json({"ok": True, "version": __version__, "tool": "Nutiscan",
+                        "tier": self.app.license.tier})
+            return
+        if path == "/api/license":
+            self._json(self.app.license_info())
             return
         if path == "/api/history":
             self._json({"items": self.app.history()})
@@ -132,8 +169,12 @@ class Handler(BaseHTTPRequestHandler):
                 if fmt not in export.FORMATS:
                     self._json({"error": "tundmatu formaat"}, HTTPStatus.BAD_REQUEST)
                     return
+                if not self.app.license.allows_format(fmt):
+                    self._json({"error": "Pakk ei luba seda eksporti"}, HTTPStatus.FORBIDDEN)
+                    return
                 content_type, extension, render = export.FORMATS[fmt]
-                self._download(f"nutiscan-{job_id}.{extension}", content_type, render(snapshot))
+                self._download(f"nutiscan-{job_id}.{extension}", content_type,
+                               render(self.app.license.cap_snapshot(snapshot)))
                 return
             job_id = path.rsplit("/", 1)[-1]
             job = self.app.get(job_id)
@@ -162,12 +203,26 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):  # noqa: N802
         path = urllib.parse.urlsplit(self.path).path
+        if path == "/api/license":
+            payload = self._body()
+            key = str(payload.get("key", "")).strip()
+            try:
+                self.app.set_license(key)
+            except lic.LicenseError as exc:
+                self._json({"error": str(exc)}, HTTPStatus.BAD_REQUEST)
+                return
+            self._json(self.app.license_info())
+            return
         if path == "/api/scan":
             payload = self._body()
             if not str(payload.get("url", "")).strip():
                 self._json({"error": "URL on kohustuslik"}, HTTPStatus.BAD_REQUEST)
                 return
-            job = self.app.start(payload)
+            try:
+                job = self.app.start(payload)
+            except lic.LicenseError as exc:
+                self._json({"error": str(exc)}, HTTPStatus.FORBIDDEN)
+                return
             self._json({"id": job.id, "status": job.status}, HTTPStatus.ACCEPTED)
             return
         if path.startswith("/api/scan/") and path.endswith("/stop"):
@@ -183,9 +238,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _snapshot(self, job_id: str) -> dict | None:
         job = self.app.get(job_id)
-        if job:
-            return job.snapshot()
-        return self._disk_snapshot(job_id)
+        snapshot = job.snapshot() if job else self._disk_snapshot(job_id)
+        return self.app.license.cap_snapshot(snapshot) if snapshot else None
 
     def _all_snapshots(self) -> list[dict]:
         result: list[dict] = []
@@ -250,6 +304,16 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
+
+def _origin(url: str) -> str:
+    parts = urllib.parse.urlsplit(url if "://" in url else "https://" + url)
+    host = (parts.hostname or "").lower()
+    try:
+        port = parts.port or (443 if parts.scheme == "https" else 80)
+    except ValueError:
+        port = 0
+    return f"{host}:{port}"
 
 
 def _int(value, default: int, low: int, high: int) -> int:

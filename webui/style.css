@@ -33,6 +33,13 @@ body{background-image:radial-gradient(900px 420px at 12% -8%,rgba(61,220,151,.08
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px;
  box-shadow:0 0 10px var(--accent)}
 .mini{font-size:11px;color:#53657c;margin-top:4px}
+.license-box{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.license-box .lbl{font-size:11px;color:var(--accent);margin-bottom:6px}
+.license-box input{width:100%;box-sizing:border-box;background:#05080e;border:1px solid var(--line);
+ border-radius:8px;padding:8px 10px;color:var(--text);font-family:Consolas,monospace;font-size:11px;outline:0}
+.license-box input:focus{border-color:var(--accent)}
+.license-box button{width:100%;margin-top:6px}
+.license-box .note{font-size:10px;color:#53657c;margin-top:5px;word-break:break-word}
 .main{flex:1;min-width:0;padding:32px 40px 70px;max-width:1500px;margin:0 auto;width:100%}
 .view{animation:fade .25s ease}
 @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}

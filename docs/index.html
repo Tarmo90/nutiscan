@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Nutiscan — leia oma saidi nõrkused enne teisi</title>
-<meta name="description" content="Nutiscan skaneerib veebisaidi, kontrollib 15 turvanõrkust ja annab konkreetse parandusplaadi. Lihtne, kiire, privaatne." />
+<meta name="description" content="Nutiscan skaneerib veebisaidi, kontrollib 16 turvanõrkust ja annab konkreetse parandusplaadi. Lihtne, kiire, privaatne." />
 <style>
 :root{
   --bg:#060a11;
@@ -209,7 +209,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 <nav>
   <div class="wrap">
-    <a class="logo" href="#top"><span class="dot"></span>Nutiscan<span class="mono muted" style="font-size:12px">v2.0</span></a>
+    <a class="logo" href="#top"><span class="dot"></span>Nutiscan<span class="mono muted" style="font-size:12px">v2.3</span></a>
     <div class="nav-links">
       <a href="#demo">Demo</a>
       <a href="#features">Funktsioonid</a>
@@ -222,15 +222,16 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 <header class="wrap hero" id="top">
   <div>
-    <div class="kicker">● 15 kontrolli · 5 eksporti · privaatne</div>
+    <div class="kicker">● 16 kontrolli · 5 eksporti · privaatne</div>
     <h1>Leia oma saidi <span class="grad">nõrkused</span> enne, kui keegi teine leiab.</h1>
-    <p class="lead">Nutiscan skaneerib veebisaidi, kontrollib 15 turvanõrkust ja annab konkreetse parandusplaadi — 5 minutiga, ilma seadistamiseta.</p>
+    <p class="lead">Nutiscan skaneerib veebisaidi, kontrollib 16 turvanõrkust ja annab konkreetse parandusplaadi — 5 minutiga, ilma seadistamiseta.</p>
     <div class="hero-actions">
       <a class="btn btn-primary" href="#demo">Skanneeri tasuta →</a>
       <a class="btn btn-ghost" href="#pricing">Vaata hindu</a>
     </div>
     <div class="trust">
       <span><b>0</b> paigaldust</span>
+      <span><b>Valmis .exe</b> või Python</span>
       <span><b>Pythoni</b> standardteek</span>
       <span><b>Andmed</b> ei lahku sinu masinast</span>
     </div>
@@ -246,7 +247,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   <div class="wrap">
     <div class="sec-head">
       <h2>Proovi kohe — vaata, kuidas skann töötab</h2>
-      <p>See on interaktiivne demo. Sisesta URL ja vaata, kuidas Nutiscan 15 kontrolli läbi jookseb. Tulemused on näitlikud.</p>
+      <p>See on interaktiivne demo. Sisesta URL ja vaata, kuidas Nutiscan 16 kontrolli läbi jookseb. Tulemused on näitlikud.</p>
     </div>
     <div class="demo">
       <div class="demo-top">
@@ -280,7 +281,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     <div class="grid3">
       <div class="card">
         <div class="ic">✓</div>
-        <h3>15 kontrolli</h3>
+        <h3>16 kontrolli</h3>
         <p>Turvapäised, küpsised, CORS, TLS, avatud failid, XSS, SQLi, traversal, redirect, SSTI, CRLF ja veel.</p>
       </div>
       <div class="card">
@@ -334,7 +335,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
         <div class="badge">POPULAARNE</div>
         <h3>Töö</h3>
         <div class="amount"><span data-m="49" data-y="39">49</span> €<small>/kuus</small></div>
-        <ul><li>kuni 5 saiti</li><li>15 kontrolli</li><li>parandusplaat</li><li>kõik 5 eksporti</li></ul>
+        <ul><li>kuni 5 saiti</li><li>16 kontrolli</li><li>parandusplaat</li><li>kõik 5 eksporti</li></ul>
         <a class="btn btn-primary" href="#contact" data-plan="Töö · 49 €/kuus" data-stripe="too">Osta</a>
       </div>
       <div class="price">
@@ -389,7 +390,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 <footer>
   <div class="wrap">
-    <span>© 2026 Nutiscan · <span class="mono">v2.0.0</span></span>
+    <span>© 2026 Nutiscan · <span class="mono">v2.3.0</span></span>
     <span>Skaneeri ainult enda süsteeme.</span>
   </div>
 </footer>
@@ -404,7 +405,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     ["$ nutiscan scan --target sinu-sait.ee", "dim"],
     ["[*] kaardistan saiti…", "dim"],
     ["[+] 14 lehekülge, 6 vormi, 23 parameetrit", "ok"],
-    ["[*] jooksutan 15 kontrolli…", "dim"],
+    ["[*] jooksutan 16 kontrolli…", "dim"],
     ["[!] CSP puudub", "warn"],
     ["[+] HSTS olemas", "ok"],
     ["[!] X-Frame-Options puudub", "warn"],
@@ -443,7 +444,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     ["Avatud redirect","siht"],
     ["Käsusüst","shell"],
     ["SSTI","mall"],
-    ["CRLF","päis"]
+    ["CRLF","päis"],
+    ["GraphQL","introspeksioon"]
   ];
   var checksEl = document.getElementById("checks");
   var bar = document.getElementById("bar");

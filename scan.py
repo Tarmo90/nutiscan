@@ -13,6 +13,7 @@ import urllib.parse
 from pathlib import Path
 
 from nutiscan import __version__, export
+from nutiscan import license as lic
 from nutiscan.config import Config
 from nutiscan.engine import Engine, new_job
 
@@ -34,6 +35,7 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--input", required=True)
     report.add_argument("--formats", default="md,html")
     report.add_argument("--out", default="reports")
+    report.add_argument("--license", help="litsentsivõti (või NUTISCAN_LICENSE)")
     return parser
 
 
@@ -57,6 +59,7 @@ def _common(cmd: argparse.ArgumentParser) -> None:
     cmd.add_argument("--oob", action="store_true", help="out-of-band blind injection check")
     cmd.add_argument("--oob-wait", type=float, default=3.0, help="OOB callback wait seconds")
     cmd.add_argument("--oob-host", default="127.0.0.1", help="OOB listener bind host")
+    cmd.add_argument("--license", help="litsentsivõti (või NUTISCAN_LICENSE)")
 
 
 def config_from_args(args: argparse.Namespace) -> Config:
@@ -131,20 +134,46 @@ def render_all(snapshot: dict, formats: list[str], stem: str, out_dir: Path) -> 
     return paths
 
 
+def _license_from_args(args: argparse.Namespace) -> lic.License:
+    active = lic.active(getattr(args, "license", None))
+    if active.expired:
+        raise lic.LicenseError("Litsentsivõti on aegunud")
+    print(active.banner(), flush=True)
+    return active
+
+
+def _formats(value: str, active: lic.License) -> list[str]:
+    formats = [item.strip().lower() for item in value.split(",") if item.strip()]
+    unknown = [fmt for fmt in formats if fmt not in export.FORMATS]
+    if unknown:
+        raise ValueError(f"Tundmatu formaat: {', '.join(unknown)}")
+    allowed = active.filter_formats(formats)
+    blocked = [fmt for fmt in formats if fmt not in allowed]
+    if blocked:
+        print(f"[license] pakett ei luba eksporti: {', '.join(blocked)}", flush=True)
+    if not allowed:
+        raise lic.LicenseError("Valitud pakett ei luba ühtegi eksporti")
+    return allowed
+
+
 def run_scan(args: argparse.Namespace) -> int:
     config = config_from_args(args)
-    formats = [item.strip().lower() for item in args.formats.split(",") if item.strip()]
+    active = _license_from_args(args)
+    targets = targets_from_args(args)
+    active.require_sites(len(targets))
+    config.checks = active.filter_checks(config.checks)
+    formats = _formats(args.formats, active)
     out_dir = Path(args.out).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     engine = Engine(config)
     stamp = time.strftime("%Y%m%d-%H%M%S")
     summary: list[dict] = []
 
-    for target in targets_from_args(args):
+    for target in targets:
         print(f"[scan] {target}", flush=True)
         job = new_job(target, config)
         engine.run(job)
-        snapshot = job.snapshot()
+        snapshot = active.cap_snapshot(job.snapshot())
         stem = f"{safe_name(target)}-{stamp}"
         raw_path = out_dir / f"{stem}.raw.json"
         raw_path.write_bytes(export.to_json(snapshot))
@@ -171,8 +200,9 @@ def run_scan(args: argparse.Namespace) -> int:
 
 
 def run_report(args: argparse.Namespace) -> int:
-    snapshot = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    formats = [item.strip().lower() for item in args.formats.split(",") if item.strip()]
+    active = _license_from_args(args)
+    snapshot = active.cap_snapshot(json.loads(Path(args.input).read_text(encoding="utf-8")))
+    formats = _formats(args.formats, active)
     out_dir = Path(args.out).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     stem = Path(args.input).stem.replace(".raw", "")

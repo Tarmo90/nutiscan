@@ -3,15 +3,20 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import threading
 import time
 import unittest
+import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from unittest import mock
 
+from nutiscan import license as lic
 from webui import server
 from webui.server import App, Handler
+from test_nutiscan import TEST_LICENSE
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -19,7 +24,11 @@ ROOT = Path(__file__).resolve().parents[1]
 class WebUITest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls.temp = tempfile.TemporaryDirectory()
+        cls.history_patch = mock.patch.object(server, "HISTORY", Path(cls.temp.name))
+        cls.history_patch.start()
         cls.app = App()
+        cls.app.license = lic.load(TEST_LICENSE)
         cls.handler = type("Bound", (Handler,), {"app": cls.app})
         cls.httpd = ThreadingHTTPServer(("127.0.0.1", 0), cls.handler)
         cls.httpd.daemon_threads = True
@@ -32,6 +41,8 @@ class WebUITest(unittest.TestCase):
         cls.httpd.shutdown()
         cls.httpd.server_close()
         cls.thread.join(timeout=5)
+        cls.history_patch.stop()
+        cls.temp.cleanup()
 
     def call(self, path, payload=None, method=None):
         data = json.dumps(payload).encode() if payload is not None else None
@@ -58,6 +69,27 @@ class WebUITest(unittest.TestCase):
             self.assertIn(name, fixes)
             self.assertTrue(fixes[name]["steps"])
             self.assertTrue(fixes[name]["code"])
+
+    def test_license_api(self):
+        status, body, _ = self.call("/api/license")
+        info = json.loads(body)
+        self.assertEqual(status, 200)
+        self.assertEqual(info["tier"], "too")
+        self.assertTrue(info["signed"])
+        self.assertEqual(info["sites"], 5)
+
+        req = urllib.request.Request(
+            self.base + "/api/license", data=b'{"key":"garbage"}',
+            headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            urllib.request.urlopen(req, timeout=10)
+        except urllib.error.HTTPError as exc:
+            self.assertEqual(exc.code, 400)
+            exc.close()
+        else:
+            self.fail("Vigane võti aktsepteeriti")
+        _, body, _ = self.call("/api/license")
+        self.assertEqual(json.loads(body)["tier"], "too")
 
     def test_scan_and_exports(self):
         status, body, _ = self.call("/api/scan", {

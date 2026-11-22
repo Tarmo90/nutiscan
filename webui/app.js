@@ -48,6 +48,37 @@ fetch('/api/health').then(r => r.json()).then(d => {
 loadHistory();
 buildChecks();
 
+/* ---------- license ---------- */
+
+function renderLicense(d) {
+  const label = d.name ? d.label + ' — ' + d.name : d.label + ' (tasuta)';
+  el('licenseLabel').textContent = 'Pakk: ' + label;
+  const sites = d.sites === null ? 'piiramatu' : d.sites;
+  const findings = d.findings === null ? 'piiramatu' : d.findings;
+  el('licenseNote').textContent = sites + ' saiti · ' + findings + ' leidu · eksport: ' + d.exports.join(', ');
+  state.license = d;
+}
+
+fetch('/api/license').then(r => r.json()).then(d => {
+  renderLicense(d);
+  if (d.error) toast('Litsents: ' + d.error);
+}).catch(() => {});
+
+el('licenseApply').addEventListener('click', async () => {
+  const key = el('licenseKey').value.trim();
+  try {
+    const res = await fetch('/api/license', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key })
+    });
+    const d = await res.json();
+    if (!res.ok) { toast('Viga: ' + (d.error || 'võti ei kehti')); return; }
+    renderLicense(d);
+    el('licenseKey').value = '';
+    toast('Litsents rakendatud: ' + d.label);
+  } catch (err) { toast('Litsentsi rakendamine ebaõnnestus'); }
+});
+
 /* ---------- form ---------- */
 
 el('scanForm').addEventListener('submit', async (event) => {

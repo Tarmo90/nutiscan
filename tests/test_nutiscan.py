@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,12 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+
+# Signed test key, "Töö" tier. Invalid if the vendor keypair is regenerated.
+TEST_LICENSE = (
+    "NS1.eyJjIjpudWxsLCJlIjoiMjAzNS0xMi0zMSIsImYiOm51bGwsImkiOiI2NmZmMjhkNCIsIm4iOiJDSS1URVNUIiwiciI6dHJ1ZSwicyI6NSwidCI6InRvbyIsInYiOjEsIngiOlsianNvbiIsIm1kIiwiaHRtbCIsImNzdiIsInNhcmlmIl19."
+    "ItOGikxWra-R0EloaWqVX_LDp3TB455ET_EsMFGbv26lrxeAZRq8U8iD8QRkkQHiqm5W29iujO7Lr0pfvercDlRjv3WSWF6BuzFQu2tCnGRGvtx2e2Cre3uZvyT0h516bslR3wOXiDhKYhYH8kcnbivy9UvHaoMJ7mCiIzjqT-LtgQKDtw8jv6TP92sAXsxwt3v3Yl3gKLrjRo4NZy6d4kvB6A6_dXjrnbsqtreII9fEVf0ASQaog6YLTue-sYhwqNw7kF-L3c8GCSEhZDG2AArNVlMtToqMQNsv3qB0iuOB8eYSwgj8Pf84a3iJcc1aLFYS2kzCJZDC_5xFQiVrmQ"
+)
 
 from demo_target import DemoApp  # noqa: E402
 from nutiscan import export  # noqa: E402
@@ -106,7 +113,8 @@ class NutiscanTest(unittest.TestCase):
             result = subprocess.run(
                 [sys.executable, str(ROOT / "scan.py"), "scan", "--target", self.target,
                  "--allow-private", "--rate-limit", "80", "--max-pages", "10",
-                 "--formats", "md,html,csv,sarif,json", "--out", temp],
+                 "--formats", "md,html,csv,sarif,json", "--license", TEST_LICENSE,
+                 "--out", temp],
                 capture_output=True, text=True, timeout=120,
             )
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
@@ -114,6 +122,35 @@ class NutiscanTest(unittest.TestCase):
             suffixes = {path.suffix for path in files}
             self.assertTrue({".json", ".md", ".html", ".csv", ".sarif"}.issubset(suffixes))
             self.assertTrue(any(path.name.startswith("summary-") for path in files))
+
+    def test_cli_free_tier_caps(self):
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("NUTISCAN_LICENSE", "NUTISCAN_LICENSE_FILE")}
+        with tempfile.TemporaryDirectory() as temp:
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "scan.py"), "scan", "--target", self.target,
+                 "--allow-private", "--rate-limit", "80", "--max-pages", "10",
+                 "--formats", "md,html", "--out", temp],
+                capture_output=True, text=True, timeout=120, env=env,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            self.assertIn("Proov", result.stdout)
+            self.assertEqual({path.suffix for path in Path(temp).glob("*")}, {".md", ".json"})
+            raw = next(Path(temp).glob("*.raw.json"))
+            data = json.loads(raw.read_text(encoding="utf-8"))
+            self.assertLessEqual(len(data["findings"]), 5)
+            self.assertTrue(data.get("licenseLimited"))
+
+    def test_cli_free_tier_site_limit(self):
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("NUTISCAN_LICENSE", "NUTISCAN_LICENSE_FILE")}
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scan.py"), "scan", "--target", self.target,
+             "--target", "https://example.org", "--formats", "md"],
+            capture_output=True, text=True, timeout=30, env=env,
+        )
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn("1 saiti", result.stderr)
 
 
 if __name__ == "__main__":
