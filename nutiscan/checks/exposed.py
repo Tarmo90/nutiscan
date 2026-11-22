@@ -7,6 +7,7 @@ import re
 from ..crawling import Endpoint
 from ..findings import Finding, Severity
 from . import Context
+from .spa import is_spa_fallback
 
 KIND = "exposed"
 MAX_PROBES = 160
@@ -289,6 +290,8 @@ def check_exposed(ctx: Context, _endpoints: list[Endpoint]) -> None:
         if response.error:
             continue
         if not probe.expect_missing and (response.status >= 400 or not response.body):
+            continue
+        if not probe.expect_missing and is_spa_fallback(response):
             continue
         if not _matches(probe, response):
             continue

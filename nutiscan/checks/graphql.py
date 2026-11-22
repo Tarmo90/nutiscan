@@ -7,6 +7,7 @@ import json
 from ..crawling import Endpoint
 from ..findings import Finding, Severity
 from . import Context
+from .spa import is_spa_fallback
 
 KIND = "active"
 
@@ -58,6 +59,8 @@ def check_graphql(ctx: Context, _endpoints: list[Endpoint]) -> None:
         alias = _post(ctx, url, {
             "query": "{ a: __typename b: __typename c: __typename d: __typename e: __typename }",
         })
+        if alias and not alias.error and is_spa_fallback(alias):
+            continue
         if alias and not alias.error and "a" in alias.text and "b" in alias.text:
             ctx.emit(Finding(
                 title="GraphQL-i aliase ei piirata", severity=Severity.LOW,
